@@ -1,6 +1,5 @@
 import org.slf4j.LoggerFactory
 import org.w3c.dom.Node
-import org.w3c.dom.NodeList
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -9,19 +8,39 @@ import java.nio.file.FileSystems
 import java.nio.file.Files
 import javax.xml.parsers.DocumentBuilderFactory
 
-abstract class XmindNode(val node: Node) {
-    val xid: String
-    val modifier: String
-    val timestamp: Long
-
-    init {
-        xid = node.el("@id")!!.text!!
-        modifier = node.el("@modified-by")!!.text!!
+abstract class XmindNode(
+    open val xid: String,
+    open val modifier: String,
+    open val timestamp: Long
+) {
+    constructor(node: Node) : this(
+        xid = node.el("@id")!!.text!!,
+        modifier = node.el("@modified-by")!!.text!!,
         timestamp = node.el("@timestamp")!!.text!!.toLong()
-    }
+    )
 
     override fun toString(): String = "${this::class.simpleName}(xid=$xid,modifier=$modifier,timestamp=$timestamp)"
 }
+
+data class XNode(
+    override val xid: String,
+    override val modifier: String,
+    override val timestamp: Long
+) : XmindNode(
+    xid,
+    modifier,
+    timestamp
+)
+
+fun createXNode(
+    xid: String,
+    modifier: String,
+    timestamp: Long
+) = XNode(
+    xid,
+    modifier,
+    timestamp
+)
 
 class Topic(node: Node) : XmindNode(node) {
     val title: String
