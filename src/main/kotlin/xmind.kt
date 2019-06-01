@@ -42,20 +42,44 @@ fun createXNode(
     timestamp
 )
 
-class Topic(node: Node) : XmindNode(node) {
-    val title: String
-    val child: Set<Topic>?
-    val marker: Set<String>?
-    val label: String?
-    val note: String?
-    fun markerOf(marker: String) = this.marker?.find { it == marker }
+class Topic(
+    var title: String,
+    val child: Set<Topic>?,
+    val marker: Set<String>?,
+    val label: String?,
+    val note: String?,
+    xid: String,
+    modifier: String,
+    timestamp: Long
+) : XmindNode(
+    xid,
+    modifier,
+    timestamp
+), Cloneable {
+    constructor(node: Node) : this(
+        title = node.el("title")!!.text!!,
+        label = node.el("labels")?.el("label")?.text,
+        note = node.el("notes")?.el("plain")?.text,
+        child = node.el("children")?.el("topics")?.childNodes?.map { Topic(it) }?.toSet(),
+        marker = node.el("marker-refs")?.childNodes?.map { it.el("@marker-id")?.textContent }?.filterNotNull()?.toSet(),
+        xid = node.el("@id")!!.text!!,
+        modifier = node.el("@modified-by")!!.text!!,
+        timestamp = node.el("@timestamp")!!.text!!.toLong()
+    )
 
-    init {
-        title = node.el("title")!!.text!!
-        label = node.el("labels")?.el("label")?.text
-        note = node.el("notes")?.el("plain")?.text
-        child = node.el("children")?.el("topics")?.childNodes?.map { Topic(it) }?.toSet()
-        marker = node.el("marker-refs")?.childNodes?.map { it.el("@marker-id")?.textContent }?.filterNotNull()?.toSet()
+    fun markerOf(marker: String) = this.marker?.find { it == marker }
+    override fun clone(): Topic = super.clone() as Topic
+    fun deepClone(): Topic = this.clone().let {
+        Topic(
+            title = it.title,
+            child = it.child?.map { it.deepClone() }?.toSet(),
+            marker = it.marker,
+            label = it.label,
+            note = it.note,
+            xid = it.xid,
+            modifier = it.modifier,
+            timestamp = it.timestamp
+        )
     }
 
     override fun toString(): String =
